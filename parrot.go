@@ -40,6 +40,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
@@ -55,10 +56,57 @@ type MQTTMessage struct {
 	Retain  bool
 }
 
+/* Describes an InfluxDB Line Format message */
+type InfluxMessage struct {
+	Name   string
+	Tags   map[string]string
+	Fields map[string]string
+}
+
+func NewInflux(data string) (*InfluxMessage, error) {
+	i := InfluxMessage{}
+
+	name, rest, _ := strings.Cut(data, ",")
+
+	i.Name = name
+	i.Tags = make(map[string]string)
+	i.Fields = make(map[string]string)
+
+	tags, fields, _ := strings.Cut(rest, " ")
+
+	for _, tag := range strings.Split(tags, ",") {
+		k, v, _ := strings.Cut(tag, "=")
+		i.Tags[k] = v
+	}
+
+	for _, field := range strings.Split(fields, ",") {
+		k, v, _ := strings.Cut(field, "=")
+		i.Fields[k] = v
+	}
+
+	return &i, nil
+}
+
 /* Callback for an MQTT client which puts received messages into a channel. */
 func MessageReadLoop(c MQTT.Client, rx, tx chan MQTTMessage) {
 	for m := range rx {
-		logger.Printf("Received message on topic %s: '%s'\n", m.Topic, m.Payload)
+		// FIXME hardcoded stuff to start with, needs to come from a configuration
+		// FIXME somewhere
+		if strings.HasPrefix(m.Topic, "/sensor/") {
+			influx, err := NewInflux(m.Payload)
+
+			if err != nil {
+				logger.Fatalln("Could not parse Influx message")
+			}
+
+			tx <- MQTTMessage{
+				Topic:   fmt.Sprintf("/homeassistant/republished/%s/%s", influx.Tags["room"], influx.Name),
+				Payload: fmt.Sprintf("%s", influx.Fields["value"]),
+				Retain:  false,
+			}
+
+			// logger.Printf("Received message on topic %s: '%s' -> '%s'\n", m.Topic, m.Payload, influx)
+		}
 	}
 }
 
@@ -67,9 +115,9 @@ func MessageSendLoop(c MQTT.Client, rx, tx chan MQTTMessage) {
 	for m := range tx {
 		topic := fmt.Sprintf("%s", m.Topic)
 
-		if token := c.Publish(topic, 0, m.Retain, m.Payload); token.Wait() && token.Error() != nil {
-			logger.Fatalln("MessageLoop could not publish message.")
-		}
+		//if token := c.Publish(topic, 0, m.Retain, m.Payload); token.Wait() && token.Error() != nil {
+		//		logger.Fatalln("MessageLoop could not publish message.")
+		//}
 
 		logger.Printf("MessageLoop published topic='%s',payload='%s'\n", topic, m.Payload)
 	}
