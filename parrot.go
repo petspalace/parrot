@@ -44,6 +44,8 @@ import (
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
+
+	"github.com/petspalace/quokka"
 )
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
@@ -56,47 +58,17 @@ type MQTTMessage struct {
 	Retain  bool
 }
 
-/* Describes an InfluxDB Line Format message */
-type InfluxMessage struct {
-	Name   string
-	Tags   map[string]string
-	Fields map[string]string
-}
-
-func NewInflux(data string) (*InfluxMessage, error) {
-	i := InfluxMessage{}
-
-	name, rest, _ := strings.Cut(data, ",")
-
-	i.Name = name
-	i.Tags = make(map[string]string)
-	i.Fields = make(map[string]string)
-
-	tags, fields, _ := strings.Cut(rest, " ")
-
-	for _, tag := range strings.Split(tags, ",") {
-		k, v, _ := strings.Cut(tag, "=")
-		i.Tags[k] = v
-	}
-
-	for _, field := range strings.Split(fields, ",") {
-		k, v, _ := strings.Cut(field, "=")
-		i.Fields[k] = v
-	}
-
-	return &i, nil
-}
-
 /* Callback for an MQTT client which puts received messages into a channel. */
 func MessageReadLoop(c MQTT.Client, rx, tx chan MQTTMessage) {
 	for m := range rx {
 		// FIXME hardcoded stuff to start with, needs to come from a configuration
 		// FIXME somewhere
 		if strings.HasPrefix(m.Topic, "/sensor/") {
-			influx, err := NewInflux(m.Payload)
+			influx, err := quokka.NewInflux(m.Payload)
 
 			if err != nil {
-				logger.Fatalln("Could not parse Influx message")
+				logger.Println("Could not parse Influx message")
+				continue
 			}
 
 			tx <- MQTTMessage{

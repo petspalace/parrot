@@ -2,7 +2,10 @@ module github.com/petspalace/parrot
 
 go 1.22
 
-require github.com/eclipse/paho.mqtt.golang v1.4.3
+require (
+	github.com/eclipse/paho.mqtt.golang v1.4.3
+	github.com/petspalace/quokka v0.0.0-20240518132542-784cec2cc8af
+)
 
 require (
 	github.com/gorilla/websocket v1.5.1 // indirect
