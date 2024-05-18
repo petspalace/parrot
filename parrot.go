@@ -72,8 +72,8 @@ func MessageReadLoop(c MQTT.Client, rx, tx chan MQTTMessage) {
 			}
 
 			tx <- MQTTMessage{
-				Topic:   fmt.Sprintf("/homeassistant/republished/%s/%s", influx.Tags["room"], influx.Name),
-				Payload: fmt.Sprintf("%s", influx.Fields["value"]),
+				Topic:   fmt.Sprintf("/homeassistant/republished/%s/%s", influx.TagSet["room"], influx.Measurement),
+				Payload: fmt.Sprintf("%s", influx.FieldSet["value"]),
 				Retain:  false,
 			}
 
