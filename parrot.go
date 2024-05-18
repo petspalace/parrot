@@ -87,9 +87,9 @@ func MessageSendLoop(c MQTT.Client, rx, tx chan MQTTMessage) {
 	for m := range tx {
 		topic := fmt.Sprintf("%s", m.Topic)
 
-		//if token := c.Publish(topic, 0, m.Retain, m.Payload); token.Wait() && token.Error() != nil {
-		//		logger.Fatalln("MessageLoop could not publish message.")
-		//}
+		if token := c.Publish(topic, 0, m.Retain, m.Payload); token.Wait() && token.Error() != nil {
+			logger.Fatalln("MessageLoop could not publish message.")
+		}
 
 		logger.Printf("MessageLoop published topic='%s',payload='%s'\n", topic, m.Payload)
 	}
