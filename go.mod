@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.3
-	github.com/petspalace/quokka v0.0.0-20240518155820-d59892bf4901
+	github.com/petspalace/quokka v0.0.0-20240520073445-37b85d264a88
 )
 
 require (
