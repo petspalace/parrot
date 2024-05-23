@@ -108,8 +108,15 @@ func main() {
 
 	c := MQTT.NewClient(opts)
 
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		logger.Panic(token.Error())
+	for i := 0; i <= 10; i++ {
+		if i == 10 {
+			logger.Fatalln("Exceeded max retries")
+		}
+
+		if token := c.Connect(); token.Wait() && token.Error() != nil {
+			logger.Println("Error connecting to MQTT server, retrying")
+			time.Sleep(5 * time.Second)
+		}
 	}
 
 	tx := make(chan MQTTMessage)
