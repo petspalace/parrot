@@ -116,6 +116,8 @@ func main() {
 		if token := c.Connect(); token.Wait() && token.Error() != nil {
 			logger.Println("Error connecting to MQTT server, retrying")
 			time.Sleep(5 * time.Second)
+		} else {
+			break
 		}
 	}
 
@@ -131,7 +133,7 @@ func main() {
 	}
 
 	if token := c.Subscribe("#", byte(0), f); token.Wait() && token.Error() != nil {
-		logger.Panic(token.Error())
+		logger.Fatalln("Failed to subscribe to MQTT %v", token.Error())
 	}
 
 	go MessageReadLoop(c, rx, tx)
